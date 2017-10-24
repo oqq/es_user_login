@@ -6,6 +6,10 @@ namespace Oqq\EsUserLogin\Domain\User;
 
 use Oqq\EsUserLogin\Domain\AggregateRoot;
 use Oqq\EsUserLogin\Domain\EmailAddress;
+use Oqq\EsUserLogin\Domain\Identity\Identity;
+use Oqq\EsUserLogin\Domain\Password;
+use Oqq\EsUserLogin\Domain\PasswordHashService;
+use Oqq\EsUserLogin\Domain\User\Exception\IdentityDoesNotMatchUserException;
 use Prooph\EventSourcing\AggregateChanged;
 
 final class User extends AggregateRoot
@@ -26,6 +30,23 @@ final class User extends AggregateRoot
         $this->recordThat(Event\UserWasRegisteredAgain::withEmailAddress($this->userId, $emailAddress));
     }
 
+    public function loginWithIdentity(Identity $identity, Password $password, PasswordHashService $hashService): void
+    {
+        $this->assertIdentityMatchesUser($identity);
+
+        if (! $identity->passwordIsValid($password, $hashService)) {
+            $this->recordThat(Event\UserLoginWasDenied::withIdentity($this->userId, $identity->identityId()));
+
+            return;
+        }
+
+        $this->recordThat(Event\UserLoggedIn::withIdentity($this->userId, $identity->identityId()));
+
+        if ($identity->passwordNeedsRehash($hashService)) {
+            $identity->rehashPassword($password, $hashService);
+        }
+    }
+
     public function userId(): UserId
     {
         return $this->userId;
@@ -42,6 +63,16 @@ final class User extends AggregateRoot
             case $event instanceof Event\UserWasRegistered:
                 $this->userId = $event->userId();
                 break;
+        }
+    }
+
+    private function assertIdentityMatchesUser(Identity $identity): void
+    {
+        if (! $this->userId->sameValueAs($identity->userId())) {
+            throw IdentityDoesNotMatchUserException::withIdentityAndUserId(
+                $identity->identityId(),
+                $this->userId
+            );
         }
     }
 }

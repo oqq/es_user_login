@@ -40,6 +40,18 @@ final class Identity extends AggregateRoot
         return $identity;
     }
 
+    public function rehashPassword(Password $password, PasswordHashService $hashService): void
+    {
+        if (!$this->passwordIsValid($password, $hashService)) {
+            return;
+        }
+
+        $this->recordThat(Event\IdentityPasswordWasRehashed::withNewHash(
+            $this->identityId,
+            $password->hash($hashService)
+        ));
+    }
+
     public function identityId(): IdentityId
     {
         return $this->identityId;
@@ -55,6 +67,11 @@ final class Identity extends AggregateRoot
         return $password->isValid($this->passwordHash, $hashService);
     }
 
+    public function passwordNeedsRehash(PasswordHashService $hashService): bool
+    {
+        return $this->passwordHash->needsRehash($hashService);
+    }
+
     protected function aggregateId(): string
     {
         return $this->identityId->toString();
@@ -66,6 +83,9 @@ final class Identity extends AggregateRoot
             case $event instanceof Event\IdentityWasCreated:
                 $this->identityId = $event->identityId();
                 $this->userId = $event->userId();
+                $this->passwordHash = $event->passwordHash();
+                break;
+            case $event instanceof Event\IdentityPasswordWasRehashed:
                 $this->passwordHash = $event->passwordHash();
                 break;
         }
