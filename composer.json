@@ -1,0 +1,32 @@
+{
+  "name": "oqq/es_user_login",
+  "description": "An User Login For Event Sourced Domains",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Eric Braun"
+    }
+  ],
+  "require": {
+    "php": "^7.1",
+    "prooph/event-sourcing": "^5.2",
+    "ramsey/uuid": "^3.7"
+  },
+  "autoload": {
+    "psr-4": {
+      "Oqq\\EsUserLogin\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "OqqTest\\EsUserLogin\\": "tests/"
+    }
+  },
+  "config": {
+    "platform": {
+      "php": "7.1"
+    },
+    "sort-packages": true
+  },
+  "prefer-stable": true
+}
