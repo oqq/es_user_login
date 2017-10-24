@@ -9,6 +9,7 @@
   ],
   "require": {
     "php": "^7.1",
+    "beberlei/assert": "^2.7",
     "prooph/event-sourcing": "^5.2",
     "ramsey/uuid": "^3.7"
   },
