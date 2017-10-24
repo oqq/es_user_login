@@ -31,7 +31,7 @@ final class LogoutHandlerTest extends TestCase
     /**
      * @test
      */
-    public function it_does_nothing_with_unknown_identity(): void
+    public function it_logs_out(): void
     {
         $userId = UserId::generate();
 
