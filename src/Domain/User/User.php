@@ -47,6 +47,11 @@ final class User extends AggregateRoot
         }
     }
 
+    public function logout(): void
+    {
+        $this->recordThat(Event\UserLoggedOut::with($this->userId));
+    }
+
     public function userId(): UserId
     {
         return $this->userId;

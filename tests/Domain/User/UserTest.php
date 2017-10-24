@@ -12,6 +12,7 @@ use Oqq\EsUserLogin\Domain\Password;
 use Oqq\EsUserLogin\Domain\PasswordHash;
 use Oqq\EsUserLogin\Domain\PasswordHashService;
 use Oqq\EsUserLogin\Domain\User\Event\UserLoggedIn;
+use Oqq\EsUserLogin\Domain\User\Event\UserLoggedOut;
 use Oqq\EsUserLogin\Domain\User\Event\UserLoginWasDenied;
 use Oqq\EsUserLogin\Domain\User\Event\UserWasRegistered;
 use Oqq\EsUserLogin\Domain\User\Event\UserWasRegisteredAgain;
@@ -176,6 +177,9 @@ final class UserTest extends AggregateRootTestCase
 
         $user->loginWithIdentity($identity, $password, $hashService->reveal());
 
+        $userEvents = $this->extractPendingEvents($user);
+        $this->assertCount(1, $userEvents);
+
         $events = $this->extractPendingEvents($identity);
         $this->assertCount(1, $events);
 
@@ -210,5 +214,29 @@ final class UserTest extends AggregateRootTestCase
         $hashService = $this->prophesize(PasswordHashService::class);
 
         $user->loginWithIdentity($identity, $password, $hashService->reveal());
+
+        $events = $this->extractPendingEvents($identity);
+        $this->assertCount(0, $events);
+    }
+
+    /**
+     * @test
+     * @depends it_registers_an_user
+     */
+    public function it_logs_out(User $user): void
+    {
+        $user->logout();
+
+        $events = $this->extractPendingEvents($user);
+        $this->assertCount(1, $events);
+
+        $this->assertInstanceOf(UserLoggedOut::class, $events[0]);
+
+        $expectedPayload = [
+            'user_id' => $user->userId()->toString(),
+        ];
+
+        $this->assertSame($user->userId()->toString(), $events[0]->aggregateId());
+        $this->assertSame($expectedPayload, $events[0]->payload());
     }
 }
