@@ -39,6 +39,12 @@ abstract class AggregateId
         return $this->uuid->toString();
     }
 
+    final public function sameValueAs(AggregateId $aggregateId): bool
+    {
+        return $this->uuid->toString() === $aggregateId->toString()
+            && \get_called_class() === \get_class($aggregateId);
+    }
+
     final protected function __construct(UuidInterface $uuid)
     {
         $this->uuid = $uuid;
