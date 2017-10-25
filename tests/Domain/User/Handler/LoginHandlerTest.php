@@ -49,7 +49,7 @@ final class LoginHandlerTest extends TestCase
     {
         $this->identityRepository->load(Argument::type(IdentityId::class))->willReturn(null);
 
-        $this->userRepository->save(Argument::type(UserId::class))->shouldNotBeCalled();
+        $this->userRepository->save(Argument::type(User::class))->shouldNotBeCalled();
         $this->userRepository->save(Argument::type(Identity::class))->shouldNotBeCalled();
 
         $command = new Login([

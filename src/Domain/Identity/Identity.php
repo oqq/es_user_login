@@ -8,7 +8,6 @@ use Oqq\EsUserLogin\Domain\AggregateRoot;
 use Oqq\EsUserLogin\Domain\Password;
 use Oqq\EsUserLogin\Domain\PasswordHash;
 use Oqq\EsUserLogin\Domain\PasswordHashService;
-use Oqq\EsUserLogin\Domain\User\User;
 use Oqq\EsUserLogin\Domain\User\UserId;
 use Prooph\EventSourcing\AggregateChanged;
 
@@ -23,21 +22,26 @@ final class Identity extends AggregateRoot
     /** @var PasswordHash */
     private $passwordHash;
 
-    public static function createForUserWithPassword(
+    public static function createForNewUser(
         IdentityId $identityId,
-        User $user,
+        UserId $userId,
         Password $password,
         PasswordHashService $hashService
     ): self {
         $identity = new self();
 
-        $identity->recordThat(Event\IdentityWasCreated::forUser(
+        $identity->recordThat(Event\IdentityWasCreatedForNewUser::withUserIdAndPassword(
             $identityId,
-            $user->userId(),
+            $userId,
             $password->hash($hashService)
         ));
 
         return $identity;
+    }
+
+    public function registerReuseForNewUser(UserId $userId): void
+    {
+        $this->recordThat(Event\IdentityWasReusedForNewUser::withUserId($this->identityId, $userId));
     }
 
     public function rehashPassword(Password $password, PasswordHashService $hashService): void
@@ -99,7 +103,7 @@ final class Identity extends AggregateRoot
     protected function apply(AggregateChanged $event): void
     {
         switch (true) {
-            case $event instanceof Event\IdentityWasCreated:
+            case $event instanceof Event\IdentityWasCreatedForNewUser:
                 $this->identityId = $event->identityId();
                 $this->userId = $event->userId();
                 $this->passwordHash = $event->passwordHash();

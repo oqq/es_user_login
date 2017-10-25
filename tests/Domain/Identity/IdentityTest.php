@@ -7,15 +7,14 @@ namespace OqqTest\EsUserLogin\Domain\Identity;
 use Oqq\EsUserLogin\Domain\Identity\Event\IdentityPasswordChangeWasDenied;
 use Oqq\EsUserLogin\Domain\Identity\Event\IdentityPasswordWasChanged;
 use Oqq\EsUserLogin\Domain\Identity\Event\IdentityPasswordWasRehashed;
-use Oqq\EsUserLogin\Domain\Identity\Event\IdentityWasCreated;
+use Oqq\EsUserLogin\Domain\Identity\Event\IdentityWasCreatedForNewUser;
+use Oqq\EsUserLogin\Domain\Identity\Event\IdentityWasReusedForNewUser;
 use Oqq\EsUserLogin\Domain\Identity\Identity;
 use Oqq\EsUserLogin\Domain\Identity\IdentityId;
 use Oqq\EsUserLogin\Domain\Password;
 use Oqq\EsUserLogin\Domain\PasswordHash;
 use Oqq\EsUserLogin\Domain\PasswordHashService;
-use Oqq\EsUserLogin\Domain\User\User;
 use Oqq\EsUserLogin\Domain\User\UserId;
-use OqqTest\EsUserLogin\AggregateRootMockFactory;
 use OqqTest\EsUserLogin\Domain\AggregateRootTestCase;
 
 /**
@@ -26,15 +25,10 @@ final class IdentityTest extends AggregateRootTestCase
     /**
      * @test
      */
-    public function it_creates_identity_for_user_and_password(): Identity
+    public function it_creates_identity_for_new_user(): Identity
     {
         $identityId = IdentityId::generate();
         $userId = UserId::generate();
-
-        /** @var User $user */
-        $user = AggregateRootMockFactory::create(User::class, [
-           'userId' => $userId,
-        ]);
 
         $password = Password::fromString('secret');
         $passwordHash = PasswordHash::fromString('hash');
@@ -42,7 +36,7 @@ final class IdentityTest extends AggregateRootTestCase
         $hashService = $this->prophesize(PasswordHashService::class);
         $hashService->hash('secret')->willReturn($passwordHash);
 
-        $identity = Identity::createForUserWithPassword($identityId, $user, $password, $hashService->reveal());
+        $identity = Identity::createForNewUser($identityId, $userId, $password, $hashService->reveal());
 
         $this->assertInstanceOf(Identity::class, $identity);
         $this->assertTrue($identity->identityId()->sameValueAs($identityId));
@@ -51,7 +45,7 @@ final class IdentityTest extends AggregateRootTestCase
         $events = $this->extractPendingEvents($identity);
         $this->assertCount(1, $events);
 
-        $this->assertInstanceOf(IdentityWasCreated::class, $events[0]);
+        $this->assertInstanceOf(IdentityWasCreatedForNewUser::class, $events[0]);
 
         $expectedPayload = [
             'identity_id' => $identityId->toString(),
@@ -75,7 +69,31 @@ final class IdentityTest extends AggregateRootTestCase
 
     /**
      * @test
-     * @depends it_creates_identity_for_user_and_password
+     * @depends it_creates_identity_for_new_user
+     */
+    public function it_registers_reuse_for_new_user(Identity $identity): void
+    {
+        $userId = UserId::generate();
+
+        $identity->registerReuseForNewUser($userId);
+
+        $events = $this->extractPendingEvents($identity);
+        $this->assertCount(1, $events);
+
+        $this->assertInstanceOf(IdentityWasReusedForNewUser::class, $events[0]);
+
+        $expectedPayload = [
+            'identity_id' => $identity->identityId()->toString(),
+            'user_id' => $userId->toString(),
+        ];
+
+        $this->assertSame($identity->identityId()->toString(), $events[0]->aggregateId());
+        $this->assertSame($expectedPayload, $events[0]->payload());
+    }
+
+    /**
+     * @test
+     * @depends it_creates_identity_for_new_user
      */
     public function it_rehashes_password(Identity $identity): void
     {
@@ -104,7 +122,7 @@ final class IdentityTest extends AggregateRootTestCase
 
     /**
      * @test
-     * @depends it_creates_identity_for_user_and_password
+     * @depends it_creates_identity_for_new_user
      */
     public function it_does_not_rehash_if_password_is_not_valid(Identity $identity): void
     {
@@ -120,7 +138,7 @@ final class IdentityTest extends AggregateRootTestCase
 
     /**
      * @test
-     * @depends it_creates_identity_for_user_and_password
+     * @depends it_creates_identity_for_new_user
      */
     public function it_changes_password_with_valid_current_password(Identity $identity): void
     {
@@ -150,7 +168,7 @@ final class IdentityTest extends AggregateRootTestCase
 
     /**
      * @test
-     * @depends it_creates_identity_for_user_and_password
+     * @depends it_creates_identity_for_new_user
      */
     public function it_denies_password_change_with_invalid_password(Identity $identity): void
     {

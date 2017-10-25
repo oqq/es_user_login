@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace OqqTest\EsUserLogin\Domain\Identity\Event;
 
-use Oqq\EsUserLogin\Domain\Identity\Event\IdentityWasCreated;
+use Oqq\EsUserLogin\Domain\Identity\Event\IdentityWasReusedForNewUser;
 use Oqq\EsUserLogin\Domain\Identity\IdentityId;
-use Oqq\EsUserLogin\Domain\PasswordHash;
 use Oqq\EsUserLogin\Domain\User\UserId;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \Oqq\EsUserLogin\Domain\Identity\Event\IdentityWasCreated
+ * @covers \Oqq\EsUserLogin\Domain\Identity\Event\IdentityWasReusedForNewUser
  */
-final class IdentityWasCreatedTest extends TestCase
+final class IdentityWasReusedForNewUserTest extends TestCase
 {
     /**
      * @test
@@ -22,23 +21,20 @@ final class IdentityWasCreatedTest extends TestCase
     {
         $identityId = IdentityId::generate();
         $userId = UserId::generate();
-        $passwordHash = PasswordHash::fromString('hash');
 
-        $event = IdentityWasCreated::forUser($identityId, $userId, $passwordHash);
+        $event = IdentityWasReusedForNewUser::withUserId($identityId, $userId);
 
-        $this->assertInstanceOf(IdentityWasCreated::class, $event);
+        $this->assertInstanceOf(IdentityWasReusedForNewUser::class, $event);
         $this->assertEquals($identityId->toString(), $event->aggregateId());
 
         $expectedPayload = [
             'identity_id' => $identityId->toString(),
             'user_id' => $userId->toString(),
-            'password_hash' => $passwordHash->toString(),
         ];
 
         $this->assertSame($expectedPayload, $event->payload());
         $this->assertTrue($event->identityId()->sameValueAs($identityId));
         $this->assertTrue($event->userId()->sameValueAs($userId));
-        $this->assertSame($passwordHash->toString(), $event->passwordHash()->toString());
     }
 
     /**
@@ -48,20 +44,17 @@ final class IdentityWasCreatedTest extends TestCase
     {
         $identityId = IdentityId::generate();
         $userId = UserId::generate();
-        $passwordHash = PasswordHash::fromString('hash');
 
         $payload = [
             'identity_id' => $identityId->toString(),
             'user_id' => $userId->toString(),
-            'password_hash' => $passwordHash->toString(),
         ];
 
-        /** @var IdentityWasCreated $event */
-        $event = IdentityWasCreated::occur($identityId->toString(), $payload);
+        /** @var IdentityWasReusedForNewUser $event */
+        $event = IdentityWasReusedForNewUser::occur($identityId->toString(), $payload);
 
         $this->assertSame($payload, $event->payload());
         $this->assertTrue($event->identityId()->sameValueAs($identityId));
         $this->assertTrue($event->userId()->sameValueAs($userId));
-        $this->assertSame($passwordHash->toString(), $event->passwordHash()->toString());
     }
 }
