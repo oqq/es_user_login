@@ -1,0 +1,16 @@
+default:
+    extensions:
+        Roave\BehatPsrContainer\PsrContainerExtension:
+            container: 'config/test-container.php'
+
+    suites:
+        default:
+            services: "@psr_container"
+            paths:    [%paths.base%/features]
+            contexts:
+                - OqqFeature\EsUserLogin\CommandBusContext:
+                    - "@prooph.command_bus"
+                - OqqFeature\EsUserLogin\EventStoreContext:
+                    - "@prooph.event_store"
+                - OqqFeature\EsUserLogin\UserContext
+                - OqqFeature\EsUserLogin\IdentityContext
