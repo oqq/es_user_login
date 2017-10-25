@@ -10,6 +10,7 @@
   "require": {
     "php": "^7.1",
     "beberlei/assert": "^2.7",
+    "prooph/common": "^4.1",
     "prooph/event-sourcing": "^5.2",
     "prooph/service-bus": "^6.1",
     "ramsey/uuid": "^3.7"
