@@ -12,6 +12,6 @@ final class IdentityId extends AggregateId
 {
     public static function fromEmailAddress(EmailAddress $emailAddress): self
     {
-        return new self(Uuid::uuid5(Uuid::NAMESPACE_URL, 'mailto:' . $emailAddress->toString()));
+        return new self(Uuid::uuid5(Uuid::NAMESPACE_URL, 'mailto:' . $emailAddress->normalized()));
     }
 }

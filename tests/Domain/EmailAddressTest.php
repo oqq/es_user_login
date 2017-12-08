@@ -29,6 +29,7 @@ final class EmailAddressTest extends TestCase
         return [
             ['a@b.c'],
             ['eb@burgeins.de'],
+            ['EB@BurgEins.de']
         ];
     }
 
@@ -55,5 +56,18 @@ final class EmailAddressTest extends TestCase
             [[]],
             ['abc.de'],
         ];
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_normalized_address(): void
+    {
+        $emailAddress = EmailAddress::fromString('EB@BurgEins.de');
+        $emailAddressNormalized = EmailAddress::fromString('eb@burgeins.de');
+
+        $this->assertTrue($emailAddress->sameAs($emailAddressNormalized));
+        $this->assertSame('eb@burgeins.de', $emailAddress->normalized());
+        $this->assertSame('eb@burgeins.de', $emailAddressNormalized->normalized());
     }
 }

@@ -24,6 +24,11 @@ class IdentityIdTest extends AggregateIdTestCase
 
         $this->assertInstanceOf(AggregateId::class, $identityId);
         $this->assertInstanceOf(IdentityId::class, $identityId);
+
+        $sameEmailAddress = EmailAddress::fromString('Foo@Bar.De');
+        $sameIdentityId = IdentityId::fromEmailAddress($sameEmailAddress);
+
+        $this->assertTrue($identityId->sameValueAs($sameIdentityId));
     }
 
     protected function getAggregateIdClassName(): string

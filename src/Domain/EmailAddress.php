@@ -22,6 +22,16 @@ final class EmailAddress
         return $this->value;
     }
 
+    public function normalized(): string
+    {
+        return \mb_strtolower($this->value);
+    }
+
+    public function sameAs(EmailAddress $emailAddress): bool
+    {
+        return $this->normalized() === $emailAddress->normalized();
+    }
+
     private function __construct(string $value)
     {
         $this->value = $value;
